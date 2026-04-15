@@ -69,9 +69,9 @@
   environment.pathsToLink = [ "/share/gsettings-schemas" ];
 
   # User accounts and security
-  users.users.ilyamiro = {
+  users.users.thron = {
     isNormalUser = true;
-    description = "ilyamiro";
+    description = "thron";
     extraGroups = [ "networkmanager" "wheel" "video" "adbusers" "libvirtd"]; 
     packages = with pkgs; [
     #  thunderbird
@@ -85,7 +85,7 @@
 
   security.sudo.extraRules = [
     {
-      users = [ "ilyamiro" ];
+      users = [ "thron" ];
       commands = [
         {
           command = "ALL";
@@ -103,9 +103,6 @@
 
   programs.adb.enable = true;
 
-  # Install firefox.
-  programs.firefox.enable = true;
-
   programs.dconf = {
     enable = true;
   };
@@ -121,7 +118,7 @@
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true; 
   
-  home-manager.users.ilyamiro = {
+  home-manager.users.thron = {
     imports = [ ./home.nix ];
   };
 
@@ -166,10 +163,10 @@
   services.flatpak.enable = true;
 
   # Environment Variables
-  # environment.variables.XDG_DATA_DIRS = lib.mkForce "/home/ilyamiro/.nix-profile/share:/run/current-system/sw/share";
+  # environment.variables.XDG_DATA_DIRS = lib.mkForce "/home/thron/.nix-profile/share:/run/current-system/sw/share";
 
   # Networking and time
-  networking.hostName = "ilyamiro"; 
+  networking.hostName = "thron"; 
   
   networking.networkmanager = {
     enable = true;

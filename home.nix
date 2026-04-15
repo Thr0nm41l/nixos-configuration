@@ -21,11 +21,11 @@ in
     ./config/sessions/hyprland/default.nix
   ] ++ programImports; 
 
-  home.username = "ilyamiro";
-  home.homeDirectory = "/home/ilyamiro";
+  home.username = "thron";
+  home.homeDirectory = "/home/thron";
   home.stateVersion = "25.11"; 
   
-  home.packages = with pkgs; [
+  home.packages = with pkgs; [ # TODO: Add your desired packages here
       adwaita-icon-theme
       adw-gtk3 
   ];
@@ -107,4 +107,38 @@ in
       recursive = true;
     };
   };
+
+  programs.kitty = {
+    enable = true;
+    font = {
+      name = "MesloLGS NF";
+      size = 12;
+    };
+    settings = {
+      background = "#1a1b26";       # dark navy — change to any hex color
+      background_opacity = "0.35";  # 0.0 = fully transparent, 1.0 = fully opaque
+    };
+  };
+
+  programs.vscode = {
+    enable = true;
+    profiles.default.extensions = with pkgs.vscode-extensions; [
+      donjayamanne.githistory
+      mechatroner.rainbow-csv
+      redhat.vscode-yaml
+      jnoortheen.nix-ide
+    ];
+  };
+
+  programs.firefox = {
+    enable = true;
+    profiles.thron = {
+      extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
+        proton-pass
+        proton-vpn
+        ublock-origin
+      ];
+    };
+  };
+
 }
