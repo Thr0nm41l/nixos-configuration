@@ -1,5 +1,5 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, repoPath, ... }:
 
 { 
-  xdg.configFile."matugen".source = config.lib.file.mkOutOfStoreSymlink "/etc/nixos/config/programs/matugen";
+  xdg.configFile."matugen".source = config.lib.file.mkOutOfStoreSymlink "${repoPath}/config/programs/matugen";
 }

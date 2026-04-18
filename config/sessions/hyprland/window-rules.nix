@@ -19,9 +19,10 @@
     # Window rules
     # ─────────────────────────────
     windowrulev2 = [
-      # ───────── CS2 ─────────
-      "immediate, class:^(cs2)$"
-      "keepaspectratio, class:^(cs2)$"
+      # ───────── Steam games ─────────
+      "workspace 8 silent, class:^(steam_app_.*)$"
+      "immediate, class:^(steam_app_.*)$"
+      "keepaspectratio, class:^(steam_app_.*)$"
 
       # ───────── App Launcher ─────────
       "float, title:^(app-launcher)$"

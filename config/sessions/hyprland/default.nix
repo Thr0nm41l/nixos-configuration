@@ -1,4 +1,4 @@
-{ config, pkgs, lib, pkgs-unstable, ... }:
+{ config, pkgs, lib, pkgs-unstable, repoPath, ... }:
 
 {
   imports = [
@@ -15,40 +15,32 @@
 
   home.packages = with pkgs; [
     rofi
-    pavucontrol
-    fortune
     wl-screenrec
-    alsa-utils
     swww
-    networkmanager_dmenu
     wl-clipboard
-    fd
+    qt6.qtwayland
     qt6.qtmultimedia
     qt6.qt5compat
     qt6.qtwebsockets
-    ripgrep
+    swaynotificationcenter
     gtk3
     cava
     cliphist
-    tree
     jq
-    socat 
-    pamixer 
+    socat
+    pamixer
     brightnessctl
     acpi
     iw
-
     bluez
     libnotify
     networkmanager
     lm_sensors
-
-    socat
     bc
     pulseaudio
-    ladspaPlugins
-    ladspa-sdk
     imagemagick
+    curl
+    pciutils
   ];
   wayland.windowManager.hyprland.settings = {
     general = {
@@ -72,8 +64,7 @@
       };
     };
     input = {
-      kb_layout = "us, ru";
-      kb_options = "grp:alt_shift_toggle";
+      kb_layout = "fr";
       kb_variant = "";
       kb_model = "";
       kb_rules = "";
@@ -93,5 +84,5 @@
   home.sessionVariables.NIXOS_OZONE_WL = "1";
   home.file.".config/hypr/scripts".source =
   config.lib.file.mkOutOfStoreSymlink
-    "/etc/nixos/config/sessions/hyprland/scripts";
+    "${repoPath}/config/sessions/hyprland/scripts";
 }

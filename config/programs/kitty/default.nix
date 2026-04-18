@@ -1,5 +1,7 @@
-{ config, ... }:
+{ config, repoPath, ... }:
 
 {
-  xdg.configFile."kitty".source = config.lib.file.mkOutOfStoreSymlink "/etc/nixos/config/programs/kitty";
+  programs.kitty.enable = true;
+
+  xdg.configFile."kitty".source = config.lib.file.mkOutOfStoreSymlink "${repoPath}/config/programs/kitty";
 }

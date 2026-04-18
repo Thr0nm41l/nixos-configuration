@@ -1,6 +1,8 @@
 { config, pkgs, ... }:
 
 let
+  vars = import ./variables.nix;
+
   # 1. Define the path to your programs directory
   programsDir = ./config/programs;
 
@@ -21,13 +23,56 @@ in
     ./config/sessions/hyprland/default.nix
   ] ++ programImports; 
 
-  home.username = "thron";
-  home.homeDirectory = "/home/thron";
+  home.username = vars.username;
+  home.homeDirectory = "/home/${vars.username}";
   home.stateVersion = "25.11"; 
   
-  home.packages = with pkgs; [ # TODO: Add your desired packages here
-      adwaita-icon-theme
-      adw-gtk3 
+  home.packages = with pkgs; [
+    # GTK themes
+    adwaita-icon-theme
+    adw-gtk3
+    papirus-icon-theme
+
+    # Rice dependencies (moved from configuration.nix)
+    inotify-tools
+    killall
+    matugen
+    ffmpeg
+    grim
+    playerctl
+    satty
+    slurp
+    mpvpaper
+
+    # User packages
+    btop
+    fzf
+    direnv
+    (python313.withPackages (ps: with ps; [ numpy pandas ]))
+    telegram-desktop
+    libreoffice-qt
+    hunspell
+    hunspellDicts.fr-any
+    hunspellDicts.en_US
+    obsidian
+    obs-studio
+    p7zip
+    kdePackages.okular
+    fastfetch
+    jetbrains.idea-oss
+    gnome-tweaks
+    pkgsCross.mingwW64.stdenv.cc
+    bottles
+    qbittorrent
+    jdk8
+    steam-run
+    discord
+    teamspeak6-client
+    protonmail-desktop
+    proton-pass
+    mission-center
+    pavucontrol
+    piper
   ];
 
   # set cursor 
@@ -70,15 +115,21 @@ in
   gtk = {
     enable = true;
     
-    # Global `theme` block has been entirely removed to protect GTK4 apps.
-    
-    # Target GTK3 specifically
+    theme = {
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
+    };
+
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+
     gtk3.extraConfig = {
       gtk-application-prefer-dark-theme = 1;
       gtk-theme-name = "adw-gtk3-dark";
     };
-    
-    # Keep GTK4 native but ensure it requests the dark preference
+
     gtk4.extraConfig = {
       gtk-application-prefer-dark-theme = 1;
     };
@@ -89,14 +140,6 @@ in
     platformTheme.name = "qt6ct";
   };
   
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gtk
-    ];
-    config.common.default = "*";
-  };
-
   programs.home-manager.enable = true;
 
   fonts.fontconfig.enable = true; 
@@ -105,39 +148,6 @@ in
     ".local/share/fonts/" = {
       source = config/fonts; 
       recursive = true;
-    };
-  };
-
-  programs.kitty = {
-    enable = true;
-    font = {
-      name = "MesloLGS NF";
-      size = 12;
-    };
-    settings = {
-      background = "#1a1b26";       # dark navy — change to any hex color
-      background_opacity = "0.35";  # 0.0 = fully transparent, 1.0 = fully opaque
-    };
-  };
-
-  programs.vscode = {
-    enable = true;
-    profiles.default.extensions = with pkgs.vscode-extensions; [
-      donjayamanne.githistory
-      mechatroner.rainbow-csv
-      redhat.vscode-yaml
-      jnoortheen.nix-ide
-    ];
-  };
-
-  programs.firefox = {
-    enable = true;
-    profiles.thron = {
-      extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
-        proton-pass
-        proton-vpn
-        ublock-origin
-      ];
     };
   };
 

@@ -143,9 +143,6 @@ Item {
     }
     property string setLanguage: ""
     property string setKbOptions: "grp:alt_shift_toggle"
-    property string dotsVersion: "Loading..."
-    property string remoteVersion: ""
-    property bool updateAvailable: false
 
     property var kbToggleModelArr: [
         { label: "Alt + Shift", val: "grp:alt_shift_toggle" },
@@ -164,32 +161,6 @@ Item {
         return "Alt + Shift";
     }
 
-    onDotsVersionChanged: {
-        if (remoteVersion !== "" && dotsVersion !== "Loading...") {
-            updateAvailable = compareVersions(dotsVersion, remoteVersion);
-        }
-    }
-
-    onRemoteVersionChanged: {
-        if (remoteVersion !== "" && dotsVersion !== "Loading...") {
-            updateAvailable = compareVersions(dotsVersion, remoteVersion);
-        }
-    }
-
-    Timer {
-        id: updateNotifyTimer
-        interval: 900000 // 15 minutes in milliseconds
-        running: root.updateAvailable
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            // Bash script checks a cache file for the last notification time (900 seconds = 15 mins).
-            // Uses notify-send with -t 60000 to keep the notification on screen for 60 seconds.
-            let cmd = "FILE=\"$HOME/.cache/qs_update_notified\"; NOW=$(date +%s); if [ -f \"$FILE\" ]; then LAST=$(cat \"$FILE\"); DIFF=$((NOW - LAST)); if [ $DIFF -lt 900 ]; then exit 0; fi; fi; echo $NOW > \"$FILE\"; notify-send -t 60000 -a 'Imperative Dots' -u normal 'Update Available' 'A new version is ready! Open the config guide to apply.'";
-            Quickshell.execDetached(["bash", "-c", cmd]);
-        }
-    }
-
     function saveAppSettings() {
         let config = {
             "uiScale": root.setUiScale,
@@ -204,30 +175,6 @@ Item {
         let cmd = "mkdir -p ~/.config/hypr/ && echo '" + jsonString + "' > ~/.config/hypr/settings.json && notify-send 'Quickshell' 'Settings Applied Successfully!'";
                   
         Quickshell.execDetached(["bash", "-c", cmd]);
-    }
-
-    Process {
-        id: versionReader
-        command: ["bash", "-c", "source ~/.local/state/imperative-dots-version 2>/dev/null && echo $LOCAL_VERSION || echo 'Unknown'"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let out = this.text ? this.text.trim() : "";
-                if (out !== "") root.dotsVersion = out;
-            }
-        }
-    }
-
-    Process {
-        id: updateChecker
-        command: ["bash", "-c", "curl -m 5 -s https://raw.githubusercontent.com/thron/imperative-dots/master/install.sh | grep '^DOTS_VERSION=' | cut -d'\"' -f2"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let out = this.text ? this.text.trim() : "";
-                if (out !== "") root.remoteVersion = out;
-            }
-        }
     }
 
     Process {
@@ -713,20 +660,13 @@ Item {
                         ColumnLayout {
                             Layout.alignment: Qt.AlignVCenter
                             spacing: root.s(2)
-                            Text { 
-                                text: "Imperative"
+                            Text {
+                                text: "Config Guide"
                                 font.family: "JetBrains Mono"
                                 font.weight: Font.Black
                                 font.pixelSize: root.s(15)
                                 color: root.text
-                                Layout.alignment: Qt.AlignLeft 
-                            }
-                            Text { 
-                                text: "v" + (root.dotsVersion !== "Loading..." ? root.dotsVersion : "...")
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: root.s(11)
-                                color: root.subtext0
-                                Layout.alignment: Qt.AlignLeft 
+                                Layout.alignment: Qt.AlignLeft
                             }
                         }
                     }
@@ -801,57 +741,6 @@ Item {
                 }
 
                 Item { Layout.fillHeight: true }
-
-                // --- UPDATE AVAILABLE BUTTON ---
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: root.updateAvailable ? root.s(50) : 0
-                    visible: root.updateAvailable
-                    opacity: root.updateAvailable ? 1.0 : 0.0
-                    radius: root.s(8)
-                    color: updateHover.containsMouse ? Qt.alpha(root.green, 0.15) : Qt.alpha(root.green, 0.05)
-                    border.color: updateHover.containsMouse ? root.green : Qt.alpha(root.green, 0.4)
-                    border.width: 1
-                    scale: updateHover.pressed ? 0.96 : (updateHover.containsMouse ? 1.02 : 1.0)
-                    clip: true
-                    
-                    Behavior on Layout.preferredHeight { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-                    Behavior on opacity { NumberAnimation { duration: 300 } }
-                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: root.s(2)
-                        
-                        RowLayout {
-                            Layout.alignment: Qt.AlignHCenter
-                            spacing: root.s(6)
-                            Text { text: "󰚰"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14); color: root.green }
-                            Text { text: "Update Available"; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.green }
-                        }
-                        
-                        Text {
-                            text: root.dotsVersion + "  " + root.remoteVersion
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: root.s(10)
-                            color: root.subtext0
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                    }
-
-                    MouseArea {
-                        id: updateHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/thron/imperative-dots/master/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/thron/imperative-dots/master/install.sh)\"'; fi";
-                            Quickshell.execDetached(["bash", "-c", cmd]);
-                        }
-                    }
-                }
 
                 // --- CLOSE BUTTON ---
                 Rectangle {
@@ -1202,7 +1091,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/thron/nixos-configuration"]) 
+                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"]) 
                         }
                     }
 

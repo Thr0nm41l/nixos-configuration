@@ -4,75 +4,32 @@
 
 { config, pkgs, lib, ... }:
 
+let
+  vars = import ./variables.nix;
+in
 {
   # Imports
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      <home-manager/nixos>
     ];
-
-  home-manager.backupFileExtension = "backup";
 
   # System packages
   environment.systemPackages = with pkgs; [
-    wget 
-    taskwarrior3
-    inotify-tools
-    file
-    git
-    killall
-    btop  
-    mpv
-    zenity
-    matugen
-    neovim 
-    fzf
-    direnv
-    python311
-    ffmpeg
-    python314
-    (wrapFirefox (pkgs.firefox-unwrapped.override { pipewireSupport = true; }) {})
-    telegram-desktop
-    kitty
-    libreoffice-qt
-    hunspell
-    hunspellDicts.ru_RU
-    hunspellDicts.en_US
-    obsidian
-    obs-studio
-    p7zip
-    papers
-    fastfetch
-    jetbrains.idea-community
     quickshell
-    gnome-shell-extensions
-    grim
-    playerctl
-    satty
-    yq-go
-    xdg-desktop-portal-gtk
-    eww
-    swappy
-    slurp
-    mpvpaper
-    gnome-tweaks
-    pkgsCross.mingwW64.stdenv.cc
-    wmctrl
-    bottles
-    qbittorrent
     power-profiles-daemon
-    jdk8
-    steam-run
+    git
+    wget
+    curl
   ];
 
   environment.pathsToLink = [ "/share/gsettings-schemas" ];
 
   # User accounts and security
-  users.users.thron = {
+  users.users.${vars.username} = {
     isNormalUser = true;
-    description = "thron";
-    extraGroups = [ "networkmanager" "wheel" "video" "adbusers" "libvirtd"]; 
+    description = vars.username;
+    extraGroups = [ "networkmanager" "wheel" "video" "adbusers" "libvirtd"];
     packages = with pkgs; [
     #  thunderbird
     ];
@@ -83,17 +40,18 @@
   users.defaultUserShell = pkgs.zsh;
   system.userActivationScripts.zshrc = "touch .zshrc";
 
-  security.sudo.extraRules = [
-    {
-      users = [ "thron" ];
-      commands = [
-        {
-          command = "ALL";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
+  # Uncomment to disable password prompt for all sudo commands
+  # security.sudo.extraRules = [
+  #   {
+  #     users = [ vars.username ];
+  #     commands = [
+  #       {
+  #         command = "ALL";
+  #         options = [ "NOPASSWD" ];
+  #       }
+  #     ];
+  #   }
+  # ];
 
   services.logind.settings.Login = {
     HandlePowerKey = "ignore";
@@ -113,14 +71,6 @@
     dedicatedServer.openFirewall = true; 
   };
   programs.gamemode.enable = true;
-
-  # Home manager
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true; 
-  
-  home-manager.users.thron = {
-    imports = [ ./home.nix ];
-  };
 
   # Desktop environment, window managers and theme
   services.xserver.enable = true;
@@ -142,15 +92,19 @@
 
   # Configure keymap in X11
   services.xserver.xkb = {
-    layout = "us,ru";
+    layout = "fr";
     variant = "";
   };
+
+  console.keyMap = "fr";
 
   # Fonts
   fonts.packages = with pkgs; [
     udev-gothic-nf
     noto-fonts
     liberation_ttf
+    nerd-fonts.meslo-lg
+    nerd-fonts.jetbrains-mono
   ]; 
 
   fonts.fontconfig = {
@@ -166,28 +120,29 @@
   # environment.variables.XDG_DATA_DIRS = lib.mkForce "/home/thron/.nix-profile/share:/run/current-system/sw/share";
 
   # Networking and time
-  networking.hostName = "thron"; 
+  networking.hostName = vars.hostname;
   
   networking.networkmanager = {
     enable = true;
     wifi.powersave = false; 
   };
    # Set your time zone.
-  time.timeZone = "Europe/Copenhagen";
+  time.timeZone = "Europe/Paris";
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
+  i18n.supportedLocales = [ "en_US.UTF-8/UTF-8" "fr_FR.UTF-8/UTF-8" ];
 
   i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
+    LC_ADDRESS = "fr_FR.UTF-8";
+    LC_IDENTIFICATION = "fr_FR.UTF-8";
+    LC_MEASUREMENT = "fr_FR.UTF-8";
+    LC_MONETARY = "fr_FR.UTF-8";
+    LC_NAME = "fr_FR.UTF-8";
+    LC_NUMERIC = "fr_FR.UTF-8";
+    LC_PAPER = "fr_FR.UTF-8";
+    LC_TELEPHONE = "fr_FR.UTF-8";
+    LC_TIME = "fr_FR.UTF-8";
   };
 
   # Audio and system services
@@ -198,8 +153,35 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
+    wireplumber.extraConfig."51-mic-restore" = {
+      "monitor.alsa.rules" = [
+        # Disable NVIDIA HDMI audio input (detected as a microphone on some systems)
+        {
+          matches = [{ "api.alsa.card.name" = "~HDA NVidia*"; }];
+          actions = {
+            update-props = {
+              "device.disabled" = true;
+            };
+          };
+        }
+        # Set default volume for the real microphone (Intel HDA)
+        # Matched by card name to avoid ID shifts on reboot
+        {
+          matches = [{ "api.alsa.card.name" = "~HD-Audio Generic*"; }];
+          actions = {
+            update-props = {
+              "node.pause-on-idle" = false;
+              "audio.volume" = 0.75;
+            };
+          };
+        }
+      ];
+    };
   };
   services.blueman.enable = true;
+
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = true;
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
@@ -208,7 +190,10 @@
   services.openssh.enable = true;
 
   # Power Management Services
-  services.power-profiles-daemon.enable = true; 
+  services.power-profiles-daemon.enable = true;
+
+  # Logitech mouse configuration
+  services.ratbagd.enable = true;
 
   # Nix settings and maintenance
   nixpkgs.config.allowUnfree = true;
@@ -230,7 +215,7 @@
           version = "1.0";
           
           # CHANGE THIS to the actual path of your custom theme folder
-          src = /etc/nixos/config/programs/plymouth/simple; 
+          src = ./config/programs/plymouth/simple;
 
           installPhase = ''
             mkdir -p $out/share/plymouth/themes/simple
@@ -254,9 +239,8 @@
       "rd.systemd.show_status=false"
       "rd.udev.log_level=3"
       "udev.log_priority=3"
-      "amd_pstate=active" 
-      "tsc=reliable" 
-      "asus_wmi"
+      "intel_pstate=active"
+      "tsc=reliable"
     ];
     
   };
@@ -265,12 +249,17 @@
   programs.virt-manager.enable = true;
 	
   # Bootloader and kernel
-  boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.grub = {
+    enable = true;
+    device = "nodev";
+    efiSupport = true;
+    useOSProber = true;
+  };
 
   # Kernel Packages and Optimization
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-  hardware.cpu.amd.updateMicrocode = true;
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  # hardware.cpu.intel.updateMicrocode is handled by hardware-configuration.nix via lib.mkDefault
 
   boot.kernelModules = [ "tcp_bbr" ]; # FIX: Network Congestion Control (Helps with packet jitter)
   boot.kernel.sysctl = {
@@ -332,9 +321,9 @@
       
       # Bus IDs derived from your lspci output
       # NVIDIA: 01:00.0 -> PCI:1:0:0
-      # AMD: 04:00.0 -> PCI:4:0:0
+      # Intel: 00:02.0 -> PCI:0:2:0
       nvidiaBusId = "PCI:1:0:0";
-      amdgpuBusId = "PCI:4:0:0";
+      intelBusId = "PCI:0:2:0";
     };
   };
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Settings based on your layout
-VAULT_DIR="$HOME/Life/Obsidian"
-VAULT_NAME="Obsidian"
+# Override by setting OBSIDIAN_VAULT_DIR and OBSIDIAN_VAULT_NAME in your environment
+VAULT_DIR="${OBSIDIAN_VAULT_DIR:-$HOME/Documents/Obsidian}"
+VAULT_NAME="${OBSIDIAN_VAULT_NAME:-Obsidian}"
 YEAR=$(date +%Y)
 DAY=$(date +%d)
 MONTH=$(date +%m)

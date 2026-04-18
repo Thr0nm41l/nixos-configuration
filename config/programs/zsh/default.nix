@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, repoPath, ... }:
 
 {
   programs.zsh = {
@@ -16,10 +16,10 @@
     shellAliases = {
       edit = "sudo -E nvim -n";
       gitavail = "ssh-add $HOME/Documents/Важное/recovery_keys/GitHub/github_remote_keys/key";
-      update = "sudo nixos-rebuild switch";
+      update = "sudo nixos-rebuild switch --flake ${repoPath}#nixosbtw";
       stop = "shutdown now";
-      edconf = "sudo -E nvim /etc/nixos/configuration.nix";
-      out = "loginctl terminate-user thron";  
+      edconf = "sudo -E nvim ${repoPath}/configuration.nix";
+      out = "loginctl terminate-user ${config.home.username}";
     };
     
     
@@ -33,8 +33,8 @@
     };
 
   home.sessionVariables = {
-      hypr = "/etc/nixos/config/sessions/hyprland/";  
-      programs = "/etc/nixos/config/programs";
+      hypr = "${repoPath}/config/sessions/hyprland/";
+      programs = "${repoPath}/config/programs";
     };
 
 }
